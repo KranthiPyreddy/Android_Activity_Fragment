@@ -1,6 +1,8 @@
 package com.bignerdranch.GeoQuiz;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
 
 import android.os.Bundle;
 import android.view.View;
@@ -9,32 +11,38 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
+import java.time.DayOfWeek;
+
 public class MainActivity extends AppCompatActivity {
     //add a TAG variable to use as the tag when logging messages to the Logcat
     private final String TAG = "MainActivity";
+    private final String KEY_INDEX = "index";
     //Below are the 6 variables that are going to be used in this project
 
     private Button mTrueButton; //1
     private Button mFalseButton; //2
 
-    private Question[] mQuestionBank = {
-            new Question(R.string.question_australia, true),
-            new Question(R.string.question_oceans, true),
-            new Question(R.string.question_mideast, false),
-            new Question(R.string.question_africa, false),
-            new Question(R.string.question_americas, true),
-            new Question(R.string.question_asia, true)
-    }; //3
-
     private int mCurrentIndex = 0; //4
     private Button mNextButton; //5
     private TextView mQuestionTextView; //6
+    private QuizViewModel mQuizViewModel; //7 //  Associate the activity with an instance of QuizViewModel.
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate(Bundle) called");
+
         setContentView(R.layout.activity_main);
+        //associate the activity with an instance of QuizViewModel
+        ViewModelProvider provider = ViewModelProviders.of(this);
+        mQuizViewModel = provider.get(QuizViewModel.class);
+        Log.d(TAG, "Got a QuizViewModel: $quizViewModel");
+        if (savedInstanceState != null) {
+            mQuizViewModel.mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+        } else {
+            mQuizViewModel.mCurrentIndex = 0;
+        }
 
         mQuestionTextView = findViewById(R.id.question_text_view);
 
@@ -48,7 +56,9 @@ public class MainActivity extends AppCompatActivity {
                 // Calling checkAnswer method and passed true boolean value, to avoid writing code in multiple places.
                 checkAnswer(true);
             }
+
         });
+
 
 
         //False button onClick event method
@@ -67,13 +77,22 @@ public class MainActivity extends AppCompatActivity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                //mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                mQuizViewModel.moveToNext();
                 updateQuestion();
             }
         });
         //This is to being used by the other two methods both TRUE and FALSE
         updateQuestion();
         }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        Log.i(TAG, "onSaveInstanceState");
+        savedInstanceState.putInt(KEY_INDEX, mQuizViewModel.mCurrentIndex);
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -102,13 +121,15 @@ public class MainActivity extends AppCompatActivity {
 
         ////Update method to show next question
         private void updateQuestion () {
-        int questionTextResId = mQuestionBank[mCurrentIndex].getTextResId();
+        //int questionTextResId = mQuestionBank[mCurrentIndex].getTextResId();
+            int questionTextResId = mQuizViewModel.currentQuestionText();
         mQuestionTextView.setText(questionTextResId);
     }
 
     //checkAnswer method that will accept a boolean (this will be the answer the user pressed, e.g. true of false)
     private void checkAnswer(boolean answer) {
-        boolean correctAnswer = mQuestionBank[mCurrentIndex].isAnswer();
+        //boolean correctAnswer = mQuestionBank[mCurrentIndex].isAnswer();
+        boolean correctAnswer = mQuizViewModel.currentQuestionAnswer();
         if (answer == correctAnswer) {
             Toast.makeText(this, R.string.correct_toast, Toast.LENGTH_SHORT).show();
         } else {
