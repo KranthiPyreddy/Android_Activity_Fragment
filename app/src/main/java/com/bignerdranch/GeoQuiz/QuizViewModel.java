@@ -3,6 +3,7 @@ import android.util.Log;
 import androidx.lifecycle.ViewModel;
 public class QuizViewModel extends ViewModel {
     private static String TAG = "QuizViewModel";
+    boolean mIsCheater = false;
     //Constructor
     int mCurrentIndex = 0;
     private Question[] mQuestionBank = {
@@ -21,5 +22,12 @@ public class QuizViewModel extends ViewModel {
     }
     public void moveToNext() {
         mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+    }
+
+    public boolean isCheater() {
+        return mIsCheater;
+    }
+    public void setIsCheater(boolean isCheater) {
+        mIsCheater = isCheater;
     }
 }

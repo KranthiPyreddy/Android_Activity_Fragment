@@ -1,9 +1,12 @@
 package com.bignerdranch.GeoQuiz;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
     private Button mNextButton; //5
     private TextView mQuestionTextView; //6
     private QuizViewModel mQuizViewModel; //7 //  Associate the activity with an instance of QuizViewModel.
+
+    private Button mCheatButton; //8
+    private final int REQUEST_CODE_CHEAT = 0; //9
 
 
     @Override
@@ -60,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
         //False button onClick event method
         mFalseButton = findViewById(R.id.false_button);
         mFalseButton.setOnClickListener(new View.OnClickListener() {
@@ -69,6 +74,19 @@ public class MainActivity extends AppCompatActivity {
                 //Toast.makeText(MainActivity.this, R.string.incorrect_toast, Toast.LENGTH_SHORT.show();
                 // Calling checkAnswer method and passed true boolean value, to avoid writing code in multiple places.
                 checkAnswer(true);
+            }
+        });
+        // Hook up the cheat button and set it’s onClickListener
+        mCheatButton = findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //start activity
+                //Intent intent = new Intent(MainActivity.this, CheatActivity.class);
+                boolean answerIsTrue = mQuizViewModel.currentQuestionAnswer();
+                Intent intent = CheatActivity.newIntent(MainActivity.this, answerIsTrue);
+                //startActivity(intent);
+                startActivityForResult(intent, REQUEST_CODE_CHEAT);
             }
         });
 
@@ -84,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
         });
         //This is to being used by the other two methods both TRUE and FALSE
         updateQuestion();
-        }
+    }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -98,31 +116,35 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         Log.e(TAG, "onStart called.");
     }
+
     @Override
     public void onResume() {
         super.onResume();
         Log.d(TAG, "onResume() called.");
     }
+
     @Override
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause() called.");
     }
+
     @Override
     public void onStop() {
         super.onStop();
         Log.d(TAG, "onStop() called.");
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy() called.");
     }
 
-        ////Update method to show next question
-        private void updateQuestion () {
+    ////Update method to show next question
+    private void updateQuestion() {
         //int questionTextResId = mQuestionBank[mCurrentIndex].getTextResId();
-            int questionTextResId = mQuizViewModel.currentQuestionText();
+        int questionTextResId = mQuizViewModel.currentQuestionText();
         mQuestionTextView.setText(questionTextResId);
     }
 
@@ -130,10 +152,25 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean answer) {
         //boolean correctAnswer = mQuestionBank[mCurrentIndex].isAnswer();
         boolean correctAnswer = mQuizViewModel.currentQuestionAnswer();
-        if (answer == correctAnswer) {
+        if (mQuizViewModel.isCheater()) {
+            Toast.makeText(this, R.string.judgment_toast, Toast.LENGTH_SHORT).show();
+        } else if (answer == correctAnswer) {
             Toast.makeText(this, R.string.correct_toast, Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, R.string.incorrect_toast, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data != null) {
+                mQuizViewModel.setIsCheater(data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false));
+            }
         }
     }
 }
